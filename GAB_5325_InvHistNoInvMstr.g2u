@@ -1,0 +1,792 @@
+Program.Sub.ScreenSU.Start
+Gui.frmInvHist..Create
+Gui.frmInvHist..Size(13740,8190)
+Gui.frmInvHist..MinX(0)
+Gui.frmInvHist..MinY(0)
+Gui.frmInvHist..Position(0,0)
+Gui.frmInvHist..BackColor(-2147483633)
+Gui.frmInvHist..MousePointer(0)
+Gui.frmInvHist..Event(UnLoad,frmInvHist_UnLoad)
+Gui.frmInvHist..Caption("Inventory History (Deleted Inventory Masters)")
+Gui.frmInvHist.GsGCInvHist.Create(GsGridControl)
+Gui.frmInvHist.GsGCInvHist.Size(13560,7185)
+Gui.frmInvHist.GsGCInvHist.Position(30,690)
+Gui.frmInvHist.GsGCInvHist.Anchor(15)
+Gui.frmInvHist.lblPart.Create(Label,"Part Number",True,1065,255,0,30,75,True,0,"Arial",8,-2147483633,0)
+Gui.frmInvHist.cboPart.Create(ComboBox)
+Gui.frmInvHist.cboPart.Size(2250,330)
+Gui.frmInvHist.cboPart.Position(30,300)
+Gui.frmInvHist.cboPart.Event(Click,cboPart_Click)
+Gui.frmInvHist.cmdPart.Create(Button)
+Gui.frmInvHist.cmdPart.Size(375,375)
+Gui.frmInvHist.cmdPart.Position(3075,270)
+Gui.frmInvHist.cmdPart.Caption("^")
+Gui.frmInvHist.cmdPart.Event(Click,cmdPart_Click)
+Gui.frmInvHist.lblLoc.Create(Label,"Loc",True,450,255,0,2340,75,True,0,"Arial",8,-2147483633,0)
+Gui.frmInvHist.cboLoc.Create(ComboBox)
+Gui.frmInvHist.cboLoc.Size(690,330)
+Gui.frmInvHist.cboLoc.Position(2340,300)
+Gui.frmInvHist.cmdRefresh.Create(Button)
+Gui.frmInvHist.cmdRefresh.Size(585,375)
+Gui.frmInvHist.cmdRefresh.Position(3510,270)
+Gui.frmInvHist.cmdRefresh.Caption("REFRESH")
+Gui.frmInvHist.cmdRefresh.Event(Click,cmdRefresh_Click)
+Gui.frmInvHist.lblStauts.Create(Label,"Loading....",False,1365,255,0,4125,390,True,0,"Arial",8,-2147483633,0)
+Gui.frmInvHist.cmdExportPartList.Create(Button)
+Gui.frmInvHist.cmdExportPartList.Size(1425,375)
+Gui.frmInvHist.cmdExportPartList.Position(12165,270)
+Gui.frmInvHist.cmdExportPartList.Anchor(9)
+Gui.frmInvHist.cmdExportPartList.Caption("Export Parts List")
+Gui.frmInvHist.cmdExportPartList.Event(Click,cmdExportPartList_Click)
+Gui.frmInvHist.GsGCPartList.Create(GsGridControl)
+Gui.frmInvHist.GsGCPartList.Visible(False)
+Gui.frmInvHist.GsGCPartList.Size(990,210)
+Gui.frmInvHist.GsGCPartList.Position(12600,45)
+Gui.frmInvHist.GsGCPartList.Anchor(1)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+	V.Global.bLoadData.Declare
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	F.ODBC.Connection!con.OpenCompanyConnection(500)
+
+	F.Intrinsic.Control.CallSub(SetContextMenus)
+	F.Intrinsic.Control.CallSub(LoadComboboxes)
+	Gui.frmInvHist..Show
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.frmInvHist_UnLoad.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	F.Intrinsic.Control.If(V.Global.bLoadData)
+		F.Intrinsic.Control.CallSub(Serialize)
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.Connection!con.Close
+	F.Intrinsic.Control.End
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmInvHist_UnLoad.End
+
+Program.Sub.SetContextMenus.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	Gui.frmInvHist..ContextMenuCreate("CTXMENU")
+	Gui.frmInvHist.GsGCInvHist.ContextMenuAttach("CTXMENU")
+	Gui.frmInvHist..ContextMenuAddItem("CTXMENU","Refresh",0,"Refresh")
+	Gui.frmInvHist..ContextMenuAddItem("CTXMENU","Export",0,"Export")
+	Gui.frmInvHist..ContextMenuAddItem("CTXMENU","Reset",0,"Reset Columns")
+	Gui.frmInvHist..ContextMenuSetItemEventHandler("CTXMENU","Refresh","MenuClick")
+	Gui.frmInvHist..ContextMenuSetItemEventHandler("CTXMENU","Export","MenuClick")
+	Gui.frmInvHist..ContextMenuSetItemEventHandler("CTXMENU","Reset","MenuClick")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.SetContextMenus.End
+
+Program.Sub.MenuClick.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sFileExport.Declare
+	V.Local.bExcel.Declare
+	V.Local.bFileLocked.Declare
+	V.Local.sMsg.Declare
+	V.Local.sExt.Declare
+	
+	F.Intrinsic.Control.SelectCase(V.Args.ItemName)
+		F.Intrinsic.Control.Case("REFRESH")
+			F.Intrinsic.Control.CallSub(cmdRefresh_Click)
+			
+		F.Intrinsic.Control.Case("EXPORT")
+			F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+			F.Intrinsic.Control.If(V.Local.bExcel)
+				V.Local.sExt.Set("xlsx")
+			F.Intrinsic.Control.Else
+				V.Local.sExt.Set("csv")
+			F.Intrinsic.Control.EndIf
+			
+			F.Intrinsic.String.Build("{0}\GAB_5325_InvHist_Export.{1}",V.Caller.LocalGssTempDir,V.Local.sExt,V.Local.sFileExport)
+			F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+			F.Intrinsic.Control.If(V.Local.bFileLocked)
+				F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+				F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+			F.Intrinsic.Control.Else
+				Gui.frmInvHist.GsGCInvHist.Export(V.Local.sFileExport,V.Local.sExt)
+				F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+			F.Intrinsic.Control.EndIf
+			
+		F.Intrinsic.Control.Case("RESET")
+			V.Global.bLoadData.Set(False)
+			F.Global.Registry.AddValue(V.Caller.User,V.Caller.CompanyCode,"GVINVHIST",5325,1000,False,"Serialize",False,0,-999.0,1/1/1980,12:00:00 AM,"")
+			F.Intrinsic.Control.CallSub(cmdRefresh_Click)
+			
+	F.Intrinsic.Control.EndSelect
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.MenuClick.End
+
+Program.Sub.LoadComboboxes.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	F.Intrinsic.Control.BlockEvents
+
+	F.Data.DataTable.CreateFromSQL("dtParts","con","Select Distinct RTrim(Part) As Part,RTrim(Location) As Loc From Inventory_Hist Where Concat(Part,Location) Not In (Select Concat(Part,Location) From Inventory_Mstr);",True)
+	Gui.frmInvHist.cboPart.AddItems("DataTable","dtParts","Part","Part")
+	Gui.frmInvHist.cboPart.Text("")
+	
+	Gui.frmInvHist.GsGCPartList.AddGridviewFromDatatable("gvInvPartList","dtParts")
+	Gui.frmInvHist.GsGCPartList.MainView("gvInvPartList")
+	
+	F.Intrinsic.Control.UnBlockEvents
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadComboboxes.End
+
+Program.Sub.cboPart_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sFilter.Declare
+	
+	F.Intrinsic.Control.If(V.DataView.dtParts!dvParts.Exists)
+		F.Data.DataView.Close("dtParts","dvParts")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.String.Build("Part = '{0}'",V.Screen.frmInvHist!cboPart.Text,V.Local.sFilter)
+	F.Data.DataView.Create("dtParts","dvParts",22,V.Local.sFilter,"")
+	Gui.frmInvHist.cboLoc.AddItems("DataView","dtParts","dvParts","Loc","Loc")
+	Gui.frmInvHist.cboLoc.Text("")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cboPart_Click.End
+
+Program.Sub.cmdPart_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sRet.Declare
+	
+	F.Intrinsic.UI.Browser("Select Part:","con","Select Distinct RTrim(Part) As Part,RTrim(Location) As Loc From Inventory_Hist Where Concat(Part,Location) Not In (Select Concat(Part,Location) From Inventory_Mstr);","Part*!*Loc","500*!*50",V.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet.IsNotCancel)
+		F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+		Gui.frmInvHist.cboPart.Text(V.Local.sRet(0))
+		Gui.frmInvHist.cboLoc.Text(V.Local.sRet(1))
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdPart_Click.End
+
+Program.Sub.cmdRefresh_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sSQL.Declare
+
+	F.Intrinsic.Control.If(V.DataTable.dtInvHist.Exists)
+		F.Data.DataTable.Close("dtInvHist")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.If(V.Global.bLoadData)
+		F.Intrinsic.Control.CallSub(Serialize)
+	F.Intrinsic.Control.EndIf
+	
+	V.Global.bLoadData.Set(True)
+	Gui.frmInvHist.lblStauts.Visible(True)
+	
+	F.Intrinsic.String.Build("Select * From V_Inventory_Hist Where Part = '{0}' And Location = '{1}' Order By Date_History Desc, Inv_Hist_Time Desc;",V.Screen.frmInvHist!cboPart.Text,V.Screen.frmInvHist!cboLoc.Text,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtInvHist","con",V.Local.sSQL,True)
+	
+	F.Intrinsic.Control.CallSub(LoadGvInvHist)
+	F.Intrinsic.Control.CallSub(Deserialize)
+	Gui.frmInvHist.lblStauts.Visible(False)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdRefresh_Click.End
+
+Program.Sub.LoadGvInvHist.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sGsGCIcon.Declare
+	V.Local.sColumns.Declare
+	V.Local.iCnt.Declare
+	
+	F.Intrinsic.String.Build("{0}\GAB_GSS_Logo_Green_Dash.png",V.Caller.ArtDir,V.Local.sGsGCIcon)
+
+	Gui.frmInvHist.GsGCInvHist.AddGridViewFromDataTable("gvInvHist","dtInvHist")
+	Gui.frmInvHist.GsGCInvHist.Icon(V.Local.sGsGCIcon)
+	Gui.frmInvHist.GsGCInvHist.SuspendLayout()
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","MultiSelect",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","Editable",False)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","ReadOnly",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","AllowSort",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","AllowFilter",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","OptionsDetailShowDetailTabs",False)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","OptionsViewShowGroupPanel",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","EnableAppearanceOddRow",True)
+	Gui.frmInvHist.GsGCInvHist.SetGridViewProperty("gvInvHist","OptionsViewColumnAutoWidth",True)
+	
+	'DATE_ACCT_YR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_YR","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_YR","Caption","Date Acct Yr")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_YR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_YR","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_YR","CellHAlignment","Center")
+	
+	'DATE_ACCT_MO
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_MO","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_MO","Caption","Date Acct Mo")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_MO","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_MO","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACCT_MO","CellHAlignment","Center")
+	
+	'PART
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PART","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PART","Caption","Part")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PART","MinWidth","135")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PART","HeaderHAlignment","Left")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PART","CellHAlignment","Left")
+	
+	'LOCATION
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LOCATION","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LOCATION","Caption","Loc")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LOCATION","MinWidth","55")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LOCATION","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LOCATION","CellHAlignment","Center")
+	
+	'DATE_HISTORY
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","Caption","Date History")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","CellHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_HISTORY","DisplayCustomDateTime","d")
+	
+	'INV_HIST_TIME
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","INV_HIST_TIME","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","INV_HIST_TIME","Caption","Inv Hist Time")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","INV_HIST_TIME","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","INV_HIST_TIME","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","INV_HIST_TIME","CellHAlignment","Center")
+	
+	'CODE_TRANSACTION
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","CODE_TRANSACTION","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","CODE_TRANSACTION","Caption","Trans. Code")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","CODE_TRANSACTION","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","CODE_TRANSACTION","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","CODE_TRANSACTION","CellHAlignment","Center")
+	
+	'GL_ACCOUNT
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","GL_ACCOUNT","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","GL_ACCOUNT","Caption","GL Acct")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","GL_ACCOUNT","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","GL_ACCOUNT","HeaderHAlignment","Left")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","GL_ACCOUNT","CellHAlignment","Left")
+	
+	'TRANSACTION_DESC
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","TRANSACTION_DESC","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","TRANSACTION_DESC","Caption","Transaction Desc.")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","TRANSACTION_DESC","MinWidth","120")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","TRANSACTION_DESC","HeaderHAlignment","Left")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","TRANSACTION_DESC","CellHAlignment","Left")
+	
+	'REFER_2
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","REFER_2","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","REFER_2","Caption","Reference")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","REFER_2","MinWidth","120")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","REFER_2","HeaderHAlignment","Left")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","REFER_2","CellHAlignment","Left")
+	
+	'NEW_ONHAND
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_ONHAND","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_ONHAND","Caption","New On Hand")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_ONHAND","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_ONHAND","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_ONHAND","CellHAlignment","Far")
+	
+	'OLD_ONHAND
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_ONHAND","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_ONHAND","Caption","Old On Hand")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_ONHAND","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_ONHAND","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_ONHAND","CellHAlignment","Far")
+	
+	'OLD_INV_COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_INV_COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_INV_COST","Caption","Old Inv Cost")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_INV_COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_INV_COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_INV_COST","CellHAlignment","Far")
+	
+	'NEW_INV_COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_INV_COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_INV_COST","Caption","New Inv Cost")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_INV_COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_INV_COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_INV_COST","CellHAlignment","Center")
+	
+	'BIN
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","BIN","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","BIN","Caption","Bin")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","BIN","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","BIN","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","BIN","CellHAlignment","Center")
+	
+	'VENDOR_NO
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NO","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NO","Caption","Vendor No")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NO","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NO","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NO","CellHAlignment","Center")
+	
+	'VENDOR_NAME
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NAME","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NAME","Caption","Vendor Name")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NAME","MinWidth","100")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NAME","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","VENDOR_NAME","CellHAlignment","Center")
+	
+	'JCM_CLOSED
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JCM_CLOSED","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JCM_CLOSED","Caption","JCM Closed")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JCM_CLOSED","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JCM_CLOSED","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JCM_CLOSED","CellHAlignment","Center")
+	
+	'QUANTITY
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","QUANTITY","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","QUANTITY","Caption","Quantity")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","QUANTITY","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","QUANTITY","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","QUANTITY","CellHAlignment","Far")
+	
+	'COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST","Caption","Cost")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST","CellHAlignment","Far")
+	
+	'JOB
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JOB","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JOB","Caption","Job")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JOB","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JOB","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","JOB","CellHAlignment","Center")
+	
+	'SUFFIX
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SUFFIX","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SUFFIX","Caption","Suffix")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SUFFIX","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SUFFIX","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SUFFIX","CellHAlignment","Center")
+	
+	'SEQ
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SEQ","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SEQ","Caption","Seq")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SEQ","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SEQ","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","SEQ","CellHAlignment","Center")
+	
+	'DEBIT_PROD_LN
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DEBIT_PROD_LN","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DEBIT_PROD_LN","Caption","Debit PL")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DEBIT_PROD_LN","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DEBIT_PROD_LN","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DEBIT_PROD_LN","CellHAlignment","Center")
+	
+	'A50_CUSTOMER
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_CUSTOMER","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_CUSTOMER","Caption","A50 Customer")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_CUSTOMER","MinWidth","95")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_CUSTOMER","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_CUSTOMER","CellHAlignment","Center")
+	
+	'A50_SHIPTO
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_SHIPTO","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_SHIPTO","Caption","A50 Ship To")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_SHIPTO","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_SHIPTO","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","A50_SHIPTO","CellHAlignment","Center")
+	
+	'PRODUCT_LINE
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PRODUCT_LINE","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PRODUCT_LINE","Caption","PL")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PRODUCT_LINE","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PRODUCT_LINE","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PRODUCT_LINE","CellHAlignment","Center")
+	
+	'DATE_ACTION
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","Caption","Date Action")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","CellHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DATE_ACTION","DisplayCustomDateTime","d")
+	
+	'PROGRAM_A
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PROGRAM_A","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PROGRAM_A","Caption","Program")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PROGRAM_A","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PROGRAM_A","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","PROGRAM_A","CellHAlignment","Center")
+	
+	'IGNORE_FOR_USAGE
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","IGNORE_FOR_USAGE","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","IGNORE_FOR_USAGE","Caption","Ignore for Usage")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","IGNORE_FOR_USAGE","MinWidth","95")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","IGNORE_FOR_USAGE","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","IGNORE_FOR_USAGE","CellHAlignment","Center")
+	
+	'USERID
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","USERID","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","USERID","Caption","User ID")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","USERID","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","USERID","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","USERID","CellHAlignment","Center")
+	
+	'FG_CLOSE
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FG_CLOSE","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FG_CLOSE","Caption","FG Close")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FG_CLOSE","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FG_CLOSE","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FG_CLOSE","CellHAlignment","Center")
+	
+	'RECEIVER
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","RECEIVER","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","RECEIVER","Caption","Receiver")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","RECEIVER","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","RECEIVER","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","RECEIVER","CellHAlignment","Center")
+	
+	'COST_MATERIAL
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_MATERIAL","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_MATERIAL","Caption","Material")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_MATERIAL","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_MATERIAL","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_MATERIAL","CellHAlignment","Far")
+	
+	'COST_LABOR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_LABOR","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_LABOR","Caption","Labor")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_LABOR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_LABOR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_LABOR","CellHAlignment","Far")
+	
+	'COST_OVERHEAD
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_OVERHEAD","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_OVERHEAD","Caption","Overhead")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_OVERHEAD","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_OVERHEAD","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_OVERHEAD","CellHAlignment","Far")
+	
+	'OUTS_COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_COST","Caption","Outside")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_COST","CellHAlignment","Far")
+	
+	'FREIGHT_COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FREIGHT_COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FREIGHT_COST","Caption","Freight")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FREIGHT_COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FREIGHT_COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FREIGHT_COST","CellHAlignment","Far")
+	
+	'OTHER_COST
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTHER_COST","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTHER_COST","Caption","Other")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTHER_COST","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTHER_COST","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTHER_COST","CellHAlignment","Far")
+	
+	'MATL_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","MATL_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","MATL_VAR","Caption","Material Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","MATL_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","MATL_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","MATL_VAR","CellHAlignment","Far")
+	
+	'LABR_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LABR_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LABR_VAR","Caption","Labor Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LABR_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LABR_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","LABR_VAR","CellHAlignment","Far")
+	
+	'OVHD_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OVHD_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OVHD_VAR","Caption","Overhead Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OVHD_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OVHD_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OVHD_VAR","CellHAlignment","Far")
+	
+	'OUTS_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_VAR","Caption","Outside Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OUTS_VAR","CellHAlignment","Far")
+	
+	'FRGT_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FRGT_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FRGT_VAR","Caption","Freight Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FRGT_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FRGT_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FRGT_VAR","CellHAlignment","Far")
+	
+	'OTH_VAR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTH_VAR","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTH_VAR","Caption","Other Var")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTH_VAR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTH_VAR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OTH_VAR","CellHAlignment","Far")
+	
+	'OLD_MATL
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_MATL","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_MATL","Caption","Old Material")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_MATL","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_MATL","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_MATL","CellHAlignment","Far")
+	
+	'OLD_LABR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_LABR","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_LABR","Caption","Old Labor")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_LABR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_LABR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_LABR","CellHAlignment","Far")
+	
+	'OLD_OVHD
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OVHD","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OVHD","Caption","Old OVerhead")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OVHD","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OVHD","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OVHD","CellHAlignment","Far")
+	
+	'OLD_OUTS
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OUTS","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OUTS","Caption","Old Outside")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OUTS","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OUTS","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OUTS","CellHAlignment","Far")
+	
+	'OLD_FRGT
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_FRGT","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_FRGT","Caption","Old Freight")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_FRGT","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_FRGT","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_FRGT","CellHAlignment","Far")
+	
+	'OLD_OTH
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OTH","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OTH","Caption","Old Other")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OTH","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OTH","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","OLD_OTH","CellHAlignment","Far")
+	
+	'NEW_MATL
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_MATL","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_MATL","Caption","New Material")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_MATL","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_MATL","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_MATL","CellHAlignment","Far")
+	
+	'NEW_LABR
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_LABR","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_LABR","Caption","New Labor")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_LABR","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_LABR","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_LABR","CellHAlignment","Far")
+	
+	'NEW_OVHD
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OVHD","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OVHD","Caption","New Overhead")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OVHD","MinWidth","95")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OVHD","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OVHD","CellHAlignment","Far")
+	
+	'NEW_OUTS
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OUTS","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OUTS","Caption","New Outside")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OUTS","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OUTS","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OUTS","CellHAlignment","Far")
+	
+	'NEW_FRGT
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_FRGT","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_FRGT","Caption","New Freight")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_FRGT","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_FRGT","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_FRGT","CellHAlignment","Far")
+	
+	'NEW_OTH
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OTH","Visible",True)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OTH","Caption","New Other")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OTH","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OTH","HeaderHAlignment","Far")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","NEW_OTH","CellHAlignment","Far")
+	
+	'COST_NOT_UPD
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_NOT_UPD","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_NOT_UPD","Caption","Cost Not Upd")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_NOT_UPD","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_NOT_UPD","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","COST_NOT_UPD","CellHAlignment","Center")
+	
+'	'DTL_KEY_SEQ
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DTL_KEY_SEQ","Visible",False)
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DTL_KEY_SEQ","Caption","Dtl Key Seq")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DTL_KEY_SEQ","MinWidth","85")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DTL_KEY_SEQ","HeaderHAlignment","Center")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","DTL_KEY_SEQ","CellHAlignment","Center")
+	
+	'T10_FRGT
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT","Caption","T10 Frgt")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT","CellHAlignment","Center")
+	
+	'T10_FRGT_ACCT
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT_ACCT","Visible",False)
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT_ACCT","Caption","T10 Frgt Acct")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT_ACCT","MinWidth","85")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT_ACCT","HeaderHAlignment","Center")
+	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","T10_FRGT_ACCT","CellHAlignment","Center")
+	
+'	'FILLER
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FILLER","Visible",False)
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FILLER","Caption","Filler")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FILLER","MinWidth","85")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FILLER","HeaderHAlignment","Center")
+'	Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist","FILLER","CellHAlignment","Center")
+			
+	'Loop through columns names by using the V.DataTable.dtName.FieldNames
+	F.Intrinsic.String.Split(V.DataTable.dtInvHist.FieldNames,"*!*",V.Local.sColumns)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.sColumns.UBound,1)
+		Gui.frmInvHist.GsGCInvHist.SetColumnProperty("gvInvHist",V.Local.sColumns(V.Local.iCnt),"HeaderFontBold",True)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+	
+	Gui.frmInvHist.GsGCInvHist.ResumeLayout()
+	Gui.frmInvHist.GsGCInvHist.MainView("gvInvHist")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadGvInvHist.End
+
+Program.Sub.Serialize.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sSerialize.Declare
+	
+	Gui.frmInvHist.GsGCInvHist.Serialize("gvInvHist",V.Local.sSerialize)
+	F.Global.Registry.AddValue(V.Caller.User,V.Caller.CompanyCode,"GVINVHIST",5325,1000,False,"Serialize",False,0,-999.0,1/1/1980,12:00:00 AM,V.Local.sSerialize)
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Serialize.End
+
+Program.Sub.Deserialize.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sSerialize.Declare
+	
+	F.Global.Registry.ReadValue(V.Caller.User,V.Caller.CompanyCode,"GVINVHIST",5325,1000,6,"",V.Local.sSerialize)
+	F.Intrinsic.Control.If(V.Local.sSerialize.Trim,<>,"")
+		Gui.frmInvHist.GsGCInvHist.Deserialize(V.Local.sSerialize)
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Deserialize.End
+
+Program.Sub.cmdExportPartList_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sFileExport.Declare
+	V.Local.bExcel.Declare
+	V.Local.bFileLocked.Declare
+	V.Local.sMsg.Declare
+	V.Local.sExt.Declare
+
+	F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+	F.Intrinsic.Control.If(V.Local.bExcel)
+		V.Local.sExt.Set("xlsx")
+	F.Intrinsic.Control.Else
+		V.Local.sExt.Set("csv")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.String.Build("{0}\GAB_5325_PartsList_Export.{1}",V.Caller.LocalGssTempDir,V.Local.sExt,V.Local.sFileExport)
+	F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+	F.Intrinsic.Control.If(V.Local.bFileLocked)
+		F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+		F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+	F.Intrinsic.Control.Else
+		Gui.frmInvHist.GsGCPartList.Export(V.Local.sFileExport,V.Local.sExt)
+		F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdExportPartList_Click.End
+
+Program.Sub.Comments.Start
+Program.Sub.Comments.End
